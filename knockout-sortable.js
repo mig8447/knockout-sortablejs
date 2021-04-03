@@ -82,11 +82,11 @@
                 }.bind(undefined, e, viewModel, allBindings, options[e]);
         });
 
-        element._knockout_sortable = Sortable.create(element, options);
+        element._knockout_sortablejs = Sortable.create(element, options);
 
         // Destroy the sortable if knockout disposes the element it's connected to
         ko.utils.domNodeDisposal.addDisposeCallback(element, function () {
-            sortableElement.destroy();
+            element._knockout_sortablejs.destroy();
         });
         return ko.bindingHandlers.template.init(element, valueAccessor);
     },
@@ -96,10 +96,9 @@
         // Tested to change eventhandlers and the group options without any luck
 
         var options = buildOptions(valueAccessor, sortableOptions);
-        var sortable = element._knockout_sortable;
 
-        for (var prop in options) {
-            sortable.option(prop, options[prop]);
+        for (var optionName in options) {
+            element._knockout_sortablejs.option(optionName, options[optionName]);
         }
         
         return ko.bindingHandlers.template.update(element, valueAccessor, allBindings, viewModel, bindingContext);
