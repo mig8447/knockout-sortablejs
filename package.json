@@ -4,7 +4,8 @@
   "description": "A Knockout.js binding to SortableJS.",
   "main": "knockout-sortable.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "release": "npm run semantic-release"
   },
   "repository": {
     "type": "git",
@@ -20,6 +21,23 @@
     "url": "https://github.com/SortableJS/knockout-sortablejs/issues"
   },
   "homepage": "https://github.com/mig8447/knockout-sortablejs#readme",
+  "devDependencies": {
+    "@commitlint/cli": "^12.1.1",
+    "@commitlint/config-conventional": "^12.1.1",
+    "@semantic-release/changelog": "^5.0.1",
+    "@semantic-release/commit-analyzer": "^8.0.1",
+    "@semantic-release/git": "^9.0.0",
+    "@semantic-release/github": "^7.2.1",
+    "@semantic-release/npm": "^7.1.0",
+    "@semantic-release/release-notes-generator": "^9.0.2",
+    "husky": "^4.3.8",
+    "semantic-release": "^17.4.2"
+  },
+  "husky": {
+    "hooks": {
+      "commit-msg": "commitlint -E HUSKY_GIT_PARAMS"
+    }
+  },
   "peerDependencies": {
     "knockout": "^3.5.1",
     "sortablejs": "^1.13.0"
