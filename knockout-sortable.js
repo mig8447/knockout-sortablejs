@@ -1,86 +1,67 @@
 /*global ko*/
 
 (function (factory) {
-	"use strict";
-	//get ko ref via global or require
-	var koRef;
-	if (typeof ko !== 'undefined') {
-		//global ref already defined
-		koRef = ko;
-	}
-	else if (typeof require === 'function' && typeof exports === 'object' && typeof module === 'object') {
-		//commonjs / node.js
-		koRef = require('knockout');
-	}
-	//get sortable ref via global or require
-	var sortableRef;
-	if (typeof Sortable !== 'undefined') {
-		//global ref already defined
-		sortableRef = Sortable;
-	}
-	else if (typeof require === 'function' && typeof exports === 'object' && typeof module === 'object') {
-		//commonjs / node.js
-		sortableRef = require('sortablejs');
-	}
-	//use references if we found them
-	if (koRef !== undefined && sortableRef !== undefined) {
-		factory(koRef, sortableRef);
-	}
-	//if both references aren't found yet, get via AMD if available
-	else if (typeof define === 'function' && define.amd) {
-		//we may have a reference to only 1, or none
-		if (koRef !== undefined && sortableRef === undefined) {
-			define(['./Sortable'], function (amdSortableRef) {
-				factory(koRef, amdSortableRef);
-			});
-		}
-		else if (koRef === undefined && sortableRef !== undefined) {
-			define(['knockout'], function (amdKnockout) {
-				factory(amdKnockout, sortableRef);
-			});
-		}
-		else if (koRef === undefined && sortableRef === undefined) {
-			define(['knockout', './Sortable'], factory);
-		}
-	}
-	//no more routes to get references
-	else {
-		//report specific error
-		if (koRef !== undefined && sortableRef === undefined) {
-			throw new Error('knockout-sortable could not get reference to Sortable');
-		}
-		else if (koRef === undefined && sortableRef !== undefined) {
-			throw new Error('knockout-sortable could not get reference to Knockout');
-		}
-		else if (koRef === undefined && sortableRef === undefined) {
-			throw new Error('knockout-sortable could not get reference to Knockout or Sortable');
-		}
-	}
+    "use strict";
+    //get ko ref via global or require
+    var koRef;
+    if (typeof ko !== 'undefined') {
+        //global ref already defined
+        koRef = ko;
+    }
+    else if (typeof require === 'function' && typeof exports === 'object' && typeof module === 'object') {
+        //commonjs / node.js
+        koRef = require('knockout');
+    }
+    //get sortable ref via global or require
+    var sortableRef;
+    if (typeof Sortable !== 'undefined') {
+        //global ref already defined
+        sortableRef = Sortable;
+    }
+    else if (typeof require === 'function' && typeof exports === 'object' && typeof module === 'object') {
+        //commonjs / node.js
+        sortableRef = require('sortablejs');
+    }
+    //use references if we found them
+    if (koRef !== undefined && sortableRef !== undefined) {
+        factory(koRef, sortableRef);
+    }
+    //if both references aren't found yet, get via AMD if available
+    else if (typeof define === 'function' && define.amd) {
+        //we may have a reference to only 1, or none
+        if (koRef !== undefined && sortableRef === undefined) {
+            define(['./Sortable'], function (amdSortableRef) {
+                factory(koRef, amdSortableRef);
+            });
+        }
+        else if (koRef === undefined && sortableRef !== undefined) {
+            define(['knockout'], function (amdKnockout) {
+                factory(amdKnockout, sortableRef);
+            });
+        }
+        else if (koRef === undefined && sortableRef === undefined) {
+            define(['knockout', './Sortable'], factory);
+        }
+    }
+    //no more routes to get references
+    else {
+        //report specific error
+        if (koRef !== undefined && sortableRef === undefined) {
+            throw new Error('knockout-sortable could not get reference to Sortable');
+        }
+        else if (koRef === undefined && sortableRef !== undefined) {
+            throw new Error('knockout-sortable could not get reference to Knockout');
+        }
+        else if (koRef === undefined && sortableRef === undefined) {
+            throw new Error('knockout-sortable could not get reference to Knockout or Sortable');
+        }
+    }
 })(function (ko, Sortable) {
     "use strict";
 
     var init = function (element, valueAccessor, allBindings, viewModel, bindingContext, sortableOptions) {
 
-        var options = buildOptions(valueAccessor, sortableOptions);
-
-        // It's seems that we cannot update the eventhandlers after we've created
-        // the sortable, so define them in init instead of update
-        ['onStart', 'onEnd', 'onRemove', 'onAdd', 'onUpdate', 'onSort', 'onFilter', 'onMove', 'onClone'].forEach(function (e) {
-            if (options[e] || eventHandlers[e])
-                options[e] = function (eventType, parentVM, parentBindings, handler, e) {
-                    var itemVM = ko.dataFor(e.item),
-                        // All of the bindings on the parent element
-                        bindings = ko.utils.peekObservable(parentBindings()),
-                        // The binding options for the draggable/sortable binding of the parent element
-                        bindingHandlerBinding = bindings.sortable || bindings.draggable,
-                        // The collection that we should modify
-                        collection = bindingHandlerBinding.collection || bindingHandlerBinding.foreach;
-                    if (handler)
-                        handler(e, itemVM, parentVM, collection, bindings);
-                    if (eventHandlers[eventType])
-                        eventHandlers[eventType](e, itemVM, parentVM, collection, bindings);
-                }.bind(undefined, e, viewModel, allBindings, options[e]);
-        });
+        var options = buildOptions(valueAccessor, sortableOptions, element, allBindings, viewModel, bindingContext);
 
         element._knockout_sortablejs = Sortable.create(element, options);
 
@@ -91,16 +72,15 @@
         return ko.bindingHandlers.template.init(element, valueAccessor);
     },
     update = function (element, valueAccessor, allBindings, viewModel, bindingContext, sortableOptions) {
-
         // There seems to be some problems with updating the options of a sortable
         // Tested to change eventhandlers and the group options without any luck
 
-        var options = buildOptions(valueAccessor, sortableOptions);
+        var options = buildOptions(valueAccessor, sortableOptions, element, allBindings, viewModel, bindingContext);
 
         for (var optionName in options) {
             element._knockout_sortablejs.option(optionName, options[optionName]);
         }
-        
+
         return ko.bindingHandlers.template.update(element, valueAccessor, allBindings, viewModel, bindingContext);
     },
     eventHandlers = (function (handlers) {
@@ -147,10 +127,10 @@
                 // has an actual index of 5.
                 if (e.item.previousElementSibling) {
                     newIndex = to().indexOf(ko.dataFor(e.item.previousElementSibling));
-			
-		    if (newIndex < originalIndex) {
-			newIndex++;
-		    }
+
+            if (newIndex < originalIndex) {
+            newIndex++;
+            }
                 }
 
                 // Remove sortables "unbound" element
@@ -195,7 +175,7 @@
     })({}),
     // bindingOptions are the options set in the "data-bind" attribute in the ui.
     // options are custom options, for instance draggable/sortable specific options
-    buildOptions = function (bindingOptions, options) {
+    buildOptions = function (bindingOptions, options, element, allBindings, viewModel, bindingContext) {
         // deep clone/copy of properties from the "from" argument onto
         // the "into" argument and returns the modified "into"
         var merge = function (into, from) {
@@ -226,7 +206,33 @@
             unwrappedOptions.group = { name: unwrappedOptions.group };
         }
 
-        return merge(options, unwrappedOptions);
+        let result = merge(options, unwrappedOptions);
+        // It's seems that we cannot update the eventhandlers after we've created
+        // the sortable, so define them in init instead of update
+        [ 'onStart', 'onEnd', 'onRemove', 'onAdd', 'onUpdate', 'onSort', 'onFilter', 'onMove', 'onClone' ].forEach( function (e) {
+            if (result[e] || eventHandlers[e]) {
+                let eventType = e,
+                    parentVM = viewModel,
+                    parentBindings = allBindings,
+                    handler = result[e];
+
+                result[e] = function (e) {
+                    var itemVM = ko.dataFor(e.item),
+                        // All of the bindings on the parent element
+                        bindings = ko.utils.peekObservable(parentBindings()),
+                        // The binding options for the draggable/sortable binding of the parent element
+                        bindingHandlerBinding = bindings.sortable || bindings.draggable,
+                        // The collection that we should modify
+                        collection = bindingHandlerBinding.collection || bindingHandlerBinding.foreach;
+                    if (handler)
+                        handler(e, itemVM, parentVM, collection, bindings);
+                    if (eventHandlers[eventType])
+                        eventHandlers[eventType](e, itemVM, parentVM, collection, bindings);
+                };
+            }
+        });
+
+        return result;
     };
 
     ko.bindingHandlers.draggable = {
