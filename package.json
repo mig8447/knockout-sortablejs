@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SortableJS/knockout-sortablejs.git"
+    "url": "git+https://github.com/mig8447/knockout-sortablejs.git"
   },
   "keywords": [
     "knockout",
@@ -19,5 +19,9 @@
   "bugs": {
     "url": "https://github.com/SortableJS/knockout-sortablejs/issues"
   },
-  "homepage": "https://github.com/SortableJS/knockout-sortablejs#readme"
+  "homepage": "https://github.com/mig8447/knockout-sortablejs#readme",
+  "peerDependencies": {
+    "knockout": "^3.5.1",
+    "sortablejs": "^1.13.0"
+  }
 }
