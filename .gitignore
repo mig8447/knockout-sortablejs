@@ -1,5 +1,7 @@
+# Ignore macOS generated metadata
+**/.DS_Store
+# Ignore the Node.js modules
 node_modules
-mock.png
-.*.sw*
-.build*
-jquery.fn.*
+# Ignore the environment config
+.env
+
