@@ -226,7 +226,7 @@
                         collection = bindingHandlerBinding.collection || bindingHandlerBinding.foreach;
                     if (handler) {
                         let result = handler(e, itemVM, parentVM, collection, bindings);
-                        if ( e === 'onMove' && typeof result !== 'undefined' ) return result;
+                        if ( eventType === 'onMove' && typeof result !== 'undefined' ) return result;
                     }
                     if (eventHandlers[eventType])
                         // NOTE: Event handlers doesn't have an onMove handler
