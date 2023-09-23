@@ -224,9 +224,12 @@
                         bindingHandlerBinding = bindings.sortable || bindings.draggable,
                         // The collection that we should modify
                         collection = bindingHandlerBinding.collection || bindingHandlerBinding.foreach;
-                    if (handler)
-                        handler(e, itemVM, parentVM, collection, bindings);
+                    if (handler) {
+                        let result = handler(e, itemVM, parentVM, collection, bindings);
+                        if ( e === 'onMove' && typeof result !== 'undefined' ) return result;
+                    }
                     if (eventHandlers[eventType])
+                        // NOTE: Event handlers doesn't have an onMove handler
                         eventHandlers[eventType](e, itemVM, parentVM, collection, bindings);
                 };
             }

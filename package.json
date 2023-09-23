@@ -1,6 +1,6 @@
 {
   "name": "knockout-sortablejs",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "A Knockout.js binding to SortableJS.",
   "main": "knockout-sortable.js",
   "private": true,
