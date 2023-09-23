@@ -1,3 +1,10 @@
+### [1.0.2](https://github.com/mig8447/knockout-sortablejs/compare/v1.0.1...v1.0.2) (2023-09-23)
+
+
+### Bug Fixes
+
+* support onMove return values ([564242e](https://github.com/mig8447/knockout-sortablejs/commit/564242e26e932ed21483e4efff323b2179e64534))
+
 ### [1.0.1](https://github.com/mig8447/knockout-sortablejs/compare/v1.0.0...v1.0.1) (2023-09-23)
 
 
