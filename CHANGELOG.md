@@ -1,3 +1,10 @@
+### [1.1.1](https://github.com/mig8447/knockout-sortablejs/compare/v1.1.0...v1.1.1) (2024-12-29)
+
+
+### Bug Fixes
+
+* fix issue caused-by taking deferreds into account ([04ce8db](https://github.com/mig8447/knockout-sortablejs/commit/04ce8dbe0671bfb87f608015e74f96b3952b4ed6))
+
 ## [1.1.0](https://github.com/mig8447/knockout-sortablejs/compare/v1.0.2...v1.1.0) (2024-12-29)
 
 
