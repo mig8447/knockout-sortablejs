@@ -125,16 +125,10 @@
                 // as this might be a computed array. We could otherwise potentially
                 // drop an item above the 3rd visible item, but the 2nd visible item
                 // has an actual index of 5.
-                if (e.item.previousElementSibling) {
-                    newIndex = to().indexOf(ko.dataFor(e.item.previousElementSibling));
-
-            if (newIndex < originalIndex) {
-            newIndex++;
-            }
-                }
+                if ( e.item.previousElementSibling ) newIndex = toArray.indexOf( ko.dataFor( e.item.previousElementSibling ) ) + 1;
 
                 // Remove sortables "unbound" element
-                e.item.parentNode.removeChild(e.item);
+                e.item.parentNode.removeChild( e.item );
 
                 // This splice is necessary for both clone and move/sort
                 // In sort/move since it shouldn't be at this index/in this array anymore
