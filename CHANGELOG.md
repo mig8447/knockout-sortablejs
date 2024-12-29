@@ -1,3 +1,15 @@
+## [1.1.0](https://github.com/mig8447/knockout-sortablejs/compare/v1.0.2...v1.1.0) (2024-12-29)
+
+
+### Features
+
+* take deferred subscribables into consideration ([b21808c](https://github.com/mig8447/knockout-sortablejs/commit/b21808c78c17d49c77ac7184e3a3cb96adfa7448))
+
+
+### Bug Fixes
+
+* fix new index when moving to the last element of another collection ([f401495](https://github.com/mig8447/knockout-sortablejs/commit/f401495da24df9a2e95ce6c2765b4b720a06a704))
+
 ### [1.0.2](https://github.com/mig8447/knockout-sortablejs/compare/v1.0.1...v1.0.2) (2023-09-23)
 
 
