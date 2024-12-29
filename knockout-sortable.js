@@ -59,21 +59,6 @@
 })(function (ko, Sortable) {
     "use strict";
 
-    var deferredSubscribableKey = ( () => {
-        let lKeys = new Set( 
-            Object.entries( ko.observable().extend( { deferred: true} ) )
-                .filter( ( [ , pValue ] ) => typeof pValue === 'boolean' )
-                .map( ( [ pKey ] ) => pKey )
-        )
-            .difference( new Set(
-                Object.entries( ko.observable() )
-                    .filter( ( [ , pValue ] ) => typeof pValue === 'boolean' )
-                    .map( ( [ pKey ] ) => pKey )
-            ) );
-        return Array.from( lKeys )[ 0 ];
-    } )();
-    var isDeferredSubscribable = ( pMaybeSubscribable ) => ko.isSubscribable( pMaybeSubscribable ) && pMaybeSubscribable[ deferredSubscribableKey ];
-
     var init = function (element, valueAccessor, allBindings, viewModel, bindingContext, sortableOptions) {
 
         var options = buildOptions(valueAccessor, sortableOptions, element, allBindings, viewModel, bindingContext);
@@ -128,9 +113,6 @@
             // can be references to the same collection which means it's a sort.
             // clone indicates if we should move or copy the item into the new collection
             moveItem = function( itemVM, from, to, clone, e, sortableOptions ) {
-                // NOTE: Changes take deferreds into account to prevent
-                //       unnecessary re-renders
-
                 var fromArray = from(),
                     toArray = to(),
                     // It's not certain that the items actual index is the same
@@ -144,12 +126,9 @@
                 // has an actual index of 5.
                 if ( e.item.previousElementSibling ) newIndex = toArray.indexOf( ko.dataFor( e.item.previousElementSibling ) ) + 1;
 
-                // NOTE: When from is not deferred or from !== to we need to
-                //       remove the element so that the new parent collection
-                //       can re-render the element properly. The advantage of
-                //       deferreds is that element movement does not affect them
-                //       when from === to and re-rendering is avoided
-                if ( !isDeferredSubscribable( from ) || from !== to ) e.item.parentNode.removeChild( e.item );
+                // NOTE: If we don't do this, even when re-render is not
+                //       triggered, the node is eventually removed by ko
+                e.item.parentNode.removeChild( e.item );
 
                 // This splice is necessary for both clone and move/sort
                 // - In sort/move since it shouldn't be at this index/in this array anymore
@@ -176,11 +155,10 @@
                     from.notifySubscribers( fromArray );
                 }
 
-                // NOTE: By not running notifications early, we promote
-                //       arrayChange queuing, which allows for movement
-                //       detection on deferred subscribables
-                // // Force deferred tasks to run now, registering the removal
-                // ko.tasks.runEarly();
+                // Force deferred tasks to run now, registering the removal
+                // NOTE: If this is not done, even when re-rendering is not
+                //       forced, ko's cleanup process removes the node later
+                ko.tasks.runEarly();
 
                 // Insert the item on its new position
                 toArray.splice( newIndex, 0, itemVM );
