@@ -59,6 +59,21 @@
 })(function (ko, Sortable) {
     "use strict";
 
+    var deferredSubscribableKey = ( () => {
+        let lKeys = new Set( 
+            Object.entries( ko.observable().extend( { deferred: true} ) )
+                .filter( ( [ , pValue ] ) => typeof pValue === 'boolean' )
+                .map( ( [ pKey ] ) => pKey )
+        )
+            .difference( new Set(
+                Object.entries( ko.observable() )
+                    .filter( ( [ , pValue ] ) => typeof pValue === 'boolean' )
+                    .map( ( [ pKey ] ) => pKey )
+            ) );
+        return Array.from( lKeys )[ 0 ];
+    } )();
+    var isDeferredSubscribable = ( pMaybeSubscribable ) => ko.isSubscribable( pMaybeSubscribable ) && pMaybeSubscribable[ deferredSubscribableKey ];
+
     var init = function (element, valueAccessor, allBindings, viewModel, bindingContext, sortableOptions) {
 
         var options = buildOptions(valueAccessor, sortableOptions, element, allBindings, viewModel, bindingContext);
@@ -84,9 +99,8 @@
         return ko.bindingHandlers.template.update(element, valueAccessor, allBindings, viewModel, bindingContext);
     },
     eventHandlers = (function (handlers) {
-
         var moveOperations = [],
-            tryMoveOperation = function (e, itemVM, parentVM, collection, parentBindings) {
+            tryMoveOperation = function ( e, itemVM, parentVM, collection, parentBindings, sortableOptions ) {
                 // A move operation is the combination of a add and remove event,
                 // this is to make sure that we have both the target and origin collections
                 var currentOperation = { event: e, itemVM: itemVM, parentVM: parentVM, collection: collection, parentBindings: parentBindings },
@@ -107,18 +121,21 @@
 
                     addOperation.event.groupOption = parentBindings.sortable.options.group;
 
-                    moveItem(itemVM, removeOperation.collection, addOperation.collection, addOperation.event.clone, addOperation.event);
+                    moveItem( itemVM, removeOperation.collection, addOperation.collection, addOperation.event.clone, addOperation.event, sortableOptions );
                 }
             },
             // Moves an item from the "from" collection to the "to" collection, these
             // can be references to the same collection which means it's a sort.
             // clone indicates if we should move or copy the item into the new collection
-            moveItem = function (itemVM, from, to, clone, e) {
-                // Unwrapping this allows us to manipulate the actual array
+            moveItem = function( itemVM, from, to, clone, e, sortableOptions ) {
+                // NOTE: Changes take deferreds into account to prevent
+                //       unnecessary re-renders
+
                 var fromArray = from(),
+                    toArray = to(),
                     // It's not certain that the items actual index is the same
                     // as the index reported by sortable due to filtering etc.
-                    originalIndex = fromArray.indexOf(itemVM),
+                    originalIndex = fromArray.indexOf( itemVM ),
                     newIndex = e.newIndex;
 
                 // We have to find out the actual desired index of the to array,
@@ -127,42 +144,56 @@
                 // has an actual index of 5.
                 if ( e.item.previousElementSibling ) newIndex = toArray.indexOf( ko.dataFor( e.item.previousElementSibling ) ) + 1;
 
-                // Remove sortables "unbound" element
-                e.item.parentNode.removeChild( e.item );
+                // NOTE: When from is not deferred or from !== to we need to
+                //       remove the element so that the new parent collection
+                //       can re-render the element properly. The advantage of
+                //       deferreds is that element movement does not affect them
+                //       when from === to and re-rendering is avoided
+                if ( !isDeferredSubscribable( from ) || from !== to ) e.item.parentNode.removeChild( e.item );
 
                 // This splice is necessary for both clone and move/sort
-                // In sort/move since it shouldn't be at this index/in this array anymore
-                // In clone since we have to work around knockouts valuHasMutated
-                // when manipulating arrays and avoid a "unbound" item added by sortable
-                fromArray.splice(originalIndex, 1);
-                // Update the array, this will also remove sortables "unbound" clone
-                from.valueHasMutated();
+                // - In sort/move since it shouldn't be at this index/in this array anymore
+                // - In clone since we have to work around knockouts valueHasMutated
+                //   when manipulating arrays and avoid a "unbound" item added by sortable
+                // NOTE: Remove the item from the original array. The value is
+                //       saved in the itemVM variable
+                fromArray.splice( originalIndex, 1 );
 
-                var groupOption = e.groupOption;
                 // See the option at https://github.com/SortableJS/Sortable#options
                 // group: { name: 'shared', pull: 'clone' }
-                var cloneable = typeof groupOption === 'object' && groupOption.pull === 'clone';
+                var cloneable = typeof e.groupOption === 'object' && e.groupOption.pull === 'clone';
 
-                if (cloneable && clone && from !== to) {
-                    // Read the item
-                    fromArray.splice(originalIndex, 0, itemVM);
-                    // Force knockout to update
-                    from.valueHasMutated();
+                if ( cloneable && clone && from !== to ) {
+                    // NOTE: Since this is a clone operation, add the item to
+                    //       where it was
+                    fromArray.splice( originalIndex, 0, itemVM );
+                } else {
+                    // NOTE: We only notify the mutation to from in here because
+                    //       we did not add the element back above. This is
+                    //       equivalent to valueHasMutated but prevents errors
+                    //       when dealing with computeds
+                    from.notifySubscribers( fromArray, 'spectate' );
+                    from.notifySubscribers( fromArray );
                 }
-                // Force deferred tasks to run now, registering the removal
-                ko.tasks.runEarly();
+
+                // NOTE: By not running notifications early, we promote
+                //       arrayChange queuing, which allows for movement
+                //       detection on deferred subscribables
+                // // Force deferred tasks to run now, registering the removal
+                // ko.tasks.runEarly();
+
                 // Insert the item on its new position
-                to().splice(newIndex, 0, itemVM);
-                // Make sure to tell knockout that we've modified the actual array.
-                to.valueHasMutated();
+                toArray.splice( newIndex, 0, itemVM );
+                to.notifySubscribers( toArray, 'spectate' );
+                to.notifySubscribers( toArray );
             };
 
         handlers.onRemove = tryMoveOperation;
         handlers.onAdd = tryMoveOperation;
-        handlers.onUpdate = function (e, itemVM, parentVM, collection, parentBindings) {
+        handlers.onUpdate = function ( e, itemVM, parentVM, collection, parentBindings, sortableOptions ) {
             // This will be performed as a sort since the to/from collections
             // reference the same collection and clone is set to false
-            moveItem(itemVM, collection, collection, false, e);
+            moveItem( itemVM, collection, collection, false, e, sortableOptions );
         };
 
         return handlers;
@@ -219,12 +250,12 @@
                         // The collection that we should modify
                         collection = bindingHandlerBinding.collection || bindingHandlerBinding.foreach;
                     if (handler) {
-                        let result = handler(e, itemVM, parentVM, collection, bindings);
+                        let result = handler(e, itemVM, parentVM, collection, bindings, options);
                         if ( eventType === 'onMove' && typeof result !== 'undefined' ) return result;
                     }
                     if (eventHandlers[eventType])
                         // NOTE: Event handlers doesn't have an onMove handler
-                        eventHandlers[eventType](e, itemVM, parentVM, collection, bindings);
+                        eventHandlers[eventType](e, itemVM, parentVM, collection, bindings, options);
                 };
             }
         });
