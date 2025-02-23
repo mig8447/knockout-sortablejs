@@ -164,6 +164,12 @@
                 toArray.splice( newIndex, 0, itemVM );
                 to.notifySubscribers( toArray, 'spectate' );
                 to.notifySubscribers( toArray );
+
+                // NOTE: This is not required since its execution can be
+                //       deferred, however, this helps to run any array
+                //       subscriptions before the onEnd event is executed, which
+                //       in turn allows for movement detection
+                ko.tasks.runEarly();
             };
 
         handlers.onRemove = tryMoveOperation;
@@ -222,7 +228,7 @@
                 result[e] = function (e) {
                     var itemVM = ko.dataFor(e.item),
                         // All of the bindings on the parent element
-                        bindings = ko.utils.peekObservable(parentBindings()),
+                        bindings = ko.utils.peekObservable( parentBindings() ),
                         // The binding options for the draggable/sortable binding of the parent element
                         bindingHandlerBinding = bindings.sortable || bindings.draggable,
                         // The collection that we should modify
@@ -232,7 +238,7 @@
                         if ( eventType === 'onMove' && typeof result !== 'undefined' ) return result;
                     }
                     if (eventHandlers[eventType])
-                        // NOTE: Event handlers doesn't have an onMove handler
+                        // NOTE: The eventHandlers array doesn't have an onMove handler
                         eventHandlers[eventType](e, itemVM, parentVM, collection, bindings, options);
                 };
             }
