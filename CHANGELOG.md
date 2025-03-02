@@ -1,3 +1,10 @@
+### [1.2.1](https://github.com/mig8447/knockout-sortablejs/compare/v1.2.0...v1.2.1) (2025-03-02)
+
+
+### Bug Fixes
+
+* fix index calculation when moving element down ([94df2fa](https://github.com/mig8447/knockout-sortablejs/commit/94df2fa4e388941de16d1c700028782fb5beeb4a))
+
 ## [1.2.0](https://github.com/mig8447/knockout-sortablejs/compare/v1.1.1...v1.2.0) (2025-02-23)
 
 
