@@ -124,7 +124,13 @@
                 // as this might be a computed array. We could otherwise potentially
                 // drop an item above the 3rd visible item, but the 2nd visible item
                 // has an actual index of 5.
-                if ( e.item.previousElementSibling ) newIndex = toArray.indexOf( ko.dataFor( e.item.previousElementSibling ) ) + 1;
+                if ( e.item.previousElementSibling ) {
+                    newIndex = toArray.indexOf( ko.dataFor( e.item.previousElementSibling ) );
+                    // NOTE: If moving to a lower index (move up) we add one to
+                    //       the new index, so that the calculation is done
+                    //       correctly
+                    if ( newIndex < originalIndex ) newIndex++;
+                }
 
                 // NOTE: If we don't do this, even when re-render is not
                 //       triggered, the node is eventually removed by ko
